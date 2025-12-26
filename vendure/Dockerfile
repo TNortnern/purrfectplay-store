@@ -1,9 +1,13 @@
-FROM node:20
+FROM node:20-slim
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
-COPY package.json ./
-COPY package-lock.json ./
-RUN npm install --production
+COPY package.json package-lock.json ./
+RUN npm ci --only=production
+
 COPY . .
 RUN npm run build
+
+EXPOSE 3000
+
+CMD ["node", "dist/index.js"]
