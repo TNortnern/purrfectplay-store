@@ -46,6 +46,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-01-15',
 
   // Nitro server configuration with proxy to Vendure
+  // Dev proxy uses port 3000 (local dev), production routeRules use port 4000 (unified mode)
   nitro: {
     devProxy: {
       '/shop-api': {
@@ -79,14 +80,14 @@ export default defineNuxtConfig({
       }
     },
     routeRules: {
-      '/shop-api/**': { proxy: 'http://localhost:3000/shop-api/**' },
-      '/admin-api/**': { proxy: 'http://localhost:3000/admin-api/**' },
-      '/dashboard': { proxy: 'http://localhost:3000/dashboard' },
-      '/dashboard/**': { proxy: 'http://localhost:3000/dashboard/**' },
-      '/assets/**': { proxy: 'http://localhost:3000/assets/**' },
-      '/mailbox/**': { proxy: 'http://localhost:3000/mailbox/**' },
-      '/graphiql/**': { proxy: 'http://localhost:3000/graphiql/**' },
-      '/payments/**': { proxy: 'http://localhost:3000/payments/**' }
+      '/shop-api/**': { proxy: 'http://localhost:4000/shop-api/**' },
+      '/admin-api/**': { proxy: 'http://localhost:4000/admin-api/**' },
+      '/dashboard': { proxy: 'http://localhost:4000/dashboard' },
+      '/dashboard/**': { proxy: 'http://localhost:4000/dashboard/**' },
+      '/assets/**': { proxy: 'http://localhost:4000/assets/**' },
+      '/mailbox/**': { proxy: 'http://localhost:4000/mailbox/**' },
+      '/graphiql/**': { proxy: 'http://localhost:4000/graphiql/**' },
+      '/payments/**': { proxy: 'http://localhost:4000/payments/**' }
     }
   },
 
