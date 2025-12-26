@@ -1,0 +1,25 @@
+app = 'catiohaven-plausible'
+primary_region = 'dfw'
+
+[build]
+  image = 'ghcr.io/plausible/community-edition:v3.1.0'
+
+[env]
+  DISABLE_REGISTRATION = 'false'
+  LOG_LEVEL = 'warn'
+
+[processes]
+  app = "/bin/sh -c 'sleep 30 && /entrypoint.sh run'"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = 'suspend'
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ['app']
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1

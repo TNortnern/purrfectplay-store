@@ -1,0 +1,25 @@
+app = 'catiohaven-clickhouse'
+primary_region = 'dfw'
+
+[build]
+  image = 'clickhouse/clickhouse-server:25.3.2.39-alpine'
+
+[env]
+  CLICKHOUSE_DB = 'plausible_events_db'
+  CLICKHOUSE_LISTEN_HOST = '0.0.0.0'
+
+[mounts]
+  source = 'clickhouse_data'
+  destination = '/var/lib/clickhouse'
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 8123
+
+  [[services.ports]]
+    port = 8123
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1
