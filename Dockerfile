@@ -53,31 +53,24 @@ RUN cd /app/vendure && npm ci --only=production
 COPY --from=storefront-builder /app/storefront/.output ./storefront/.output
 COPY --from=storefront-builder /app/storefront/package.json ./storefront/
 
-# Create startup script with MODE support
-# MODE=vendure  → only run Vendure API on PORT
-# MODE=storefront → only run Nuxt on PORT
-# MODE=unified or unset → run both (Vendure on 3000, Nuxt on PORT)
+# Create startup script - unified mode (runs both Vendure and Nuxt)
 RUN echo '#!/bin/sh' > /app/start.sh && \
-    echo 'set -e' >> /app/start.sh && \
-    echo 'echo "=== START.SH DEBUG ===" ' >> /app/start.sh && \
-    echo 'echo "MODE env var: [$MODE]"' >> /app/start.sh && \
-    echo 'echo "PORT env var: [$PORT]"' >> /app/start.sh && \
-    echo 'echo "====================="' >> /app/start.sh && \
-    echo 'if [ "$MODE" = "vendure" ]; then' >> /app/start.sh && \
-    echo '  echo "MODE=vendure: Starting Vendure API on port ${PORT:-3000}..."' >> /app/start.sh && \
-    echo '  cd /app/vendure && PORT=${PORT:-3000} node dist/index.js' >> /app/start.sh && \
-    echo 'elif [ "$MODE" = "storefront" ]; then' >> /app/start.sh && \
-    echo '  echo "MODE=storefront: Starting Nuxt on port ${PORT:-3000}..."' >> /app/start.sh && \
-    echo '  cd /app/storefront && NITRO_PORT=${PORT:-3000} NUXT_HOST=0.0.0.0 node .output/server/index.mjs' >> /app/start.sh && \
+    echo 'echo "=== UNIFIED MODE STARTUP ===" ' >> /app/start.sh && \
+    echo 'echo "PORT: ${PORT:-3000}"' >> /app/start.sh && \
+    echo 'echo "DATABASE_URL set: $([ -n "$DATABASE_URL" ] && echo YES || echo NO)"' >> /app/start.sh && \
+    echo 'echo "Starting Vendure on internal port 4000..."' >> /app/start.sh && \
+    echo 'cd /app/vendure && PORT=4000 node dist/index.js 2>&1 &' >> /app/start.sh && \
+    echo 'VENDURE_PID=$!' >> /app/start.sh && \
+    echo 'echo "Vendure PID: $VENDURE_PID"' >> /app/start.sh && \
+    echo 'echo "Waiting 10 seconds for Vendure to initialize..."' >> /app/start.sh && \
+    echo 'sleep 10' >> /app/start.sh && \
+    echo 'if kill -0 $VENDURE_PID 2>/dev/null; then' >> /app/start.sh && \
+    echo '  echo "Vendure is running"' >> /app/start.sh && \
     echo 'else' >> /app/start.sh && \
-    echo '  echo "MODE=unified: Starting both services..."' >> /app/start.sh && \
-    echo '  echo "Starting Vendure on internal port 4000..."' >> /app/start.sh && \
-    echo '  cd /app/vendure && PORT=4000 node dist/index.js &' >> /app/start.sh && \
-    echo '  sleep 8' >> /app/start.sh && \
-    echo '  echo "Starting Nuxt on public port ${PORT:-3000}..."' >> /app/start.sh && \
-    echo '  export VENDURE_API_URL=http://localhost:4000' >> /app/start.sh && \
-    echo '  cd /app/storefront && NITRO_PORT=${PORT:-3000} NUXT_HOST=0.0.0.0 node .output/server/index.mjs' >> /app/start.sh && \
+    echo '  echo "ERROR: Vendure failed to start!"' >> /app/start.sh && \
     echo 'fi' >> /app/start.sh && \
+    echo 'echo "Starting Nuxt on port ${PORT:-3000}..."' >> /app/start.sh && \
+    echo 'cd /app/storefront && NITRO_PORT=${PORT:-3000} NUXT_HOST=0.0.0.0 node .output/server/index.mjs' >> /app/start.sh && \
     chmod +x /app/start.sh
 
 # Environment variables
