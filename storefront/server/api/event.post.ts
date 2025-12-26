@@ -1,4 +1,5 @@
-// Proxy Plausible event API through our domain to avoid adblockers
+// Proxy Plausible event API - standard endpoint the tracker library expects
+// This proxies through our domain to avoid adblockers
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const plausibleHost = config.plausibleApiHost || 'http://localhost:8001'

@@ -1,7 +1,7 @@
 // Proxy Plausible analytics script through our domain to avoid adblockers
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
-  const plausibleHost = config.plausibleApiHost || 'http://localhost:8000'
+  const plausibleHost = config.plausibleApiHost || 'http://localhost:8001'
 
   try {
     const response = await fetch(`${plausibleHost}/js/script.js`)
