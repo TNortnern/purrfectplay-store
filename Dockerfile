@@ -24,6 +24,10 @@ RUN npm run build:dashboard
 FROM base AS storefront-builder
 WORKDIR /app/storefront
 
+# Accept build args for public config (needed for prerendering)
+ARG NUXT_PUBLIC_POSTHOG_KEY
+ENV NUXT_PUBLIC_POSTHOG_KEY=${NUXT_PUBLIC_POSTHOG_KEY}
+
 COPY storefront/package.json storefront/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 

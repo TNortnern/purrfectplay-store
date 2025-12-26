@@ -6,6 +6,9 @@ primary_region = 'dfw'
 [build]
   dockerfile = 'Dockerfile'
 
+[build.args]
+  NUXT_PUBLIC_POSTHOG_KEY = 'phc_2Ur7lOQ8paVMQTRKJ5iccFFJYkp5Fz06C5C367qmVYQ'
+
 [http_service]
   internal_port = 6000
   force_https = true
