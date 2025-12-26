@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from 'fs'
 
-const BUILD_VERSION = '2025-12-26-v3'
+const BUILD_VERSION = '2025-12-26-v4-startcmd'
 
 export default defineEventHandler(() => {
   let vendureLog = 'No log file found'
