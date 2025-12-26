@@ -41,7 +41,7 @@ export const useVendure = () => {
 
     // Use $fetch.raw to get full response with headers
     // Using /api/shop instead of /shop-api to ensure headers are properly forwarded
-    const rawResponse = await $fetch.raw<{ data: T; errors?: Array<{ message: string }> }>('/api/shop', {
+    const rawResponse = await $fetch.raw<{ data: T, errors?: Array<{ message: string }> }>('/api/shop', {
       method: 'POST',
       body: { query: gql, variables },
       headers,
@@ -412,7 +412,7 @@ interface OrderLine {
   id: string
   quantity: number
   linePriceWithTax: number
-  productVariant: ProductVariant & { product: { name: string; slug: string; featuredAsset?: Asset } }
+  productVariant: ProductVariant & { product: { name: string, slug: string, featuredAsset?: Asset } }
 }
 
 interface OrderError {

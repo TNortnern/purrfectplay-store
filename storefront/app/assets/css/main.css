@@ -16,3 +16,36 @@
   --color-green-900: #0A5331;
   --color-green-950: #052E16;
 }
+
+/* Scroll Animations */
+.scroll-transition {
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+/* Fade Up (Default) */
+.anim-fade-up {
+  transform: translateY(30px);
+}
+
+/* Fade In */
+.anim-fade-in {
+  transform: scale(0.95);
+}
+
+/* Slide Right */
+.anim-slide-right {
+  transform: translateX(-30px);
+}
+
+/* Slide Left */
+.anim-slide-left {
+  transform: translateX(30px);
+}
+
+/* Visible State */
+.is-visible {
+  opacity: 1 !important;
+  transform: translate(0) scale(1) !important;
+}

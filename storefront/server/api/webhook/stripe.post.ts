@@ -134,8 +134,8 @@ async function handleCheckoutComplete(
 
     // Get session cookies from login response for subsequent requests
     // Use getSetCookie() if available, otherwise extract from entries
-    const setCookies = (loginResponse.headers as unknown as { getSetCookie?: () => string[] }).getSetCookie?.() ||
-      Array.from(loginResponse.headers.entries())
+    const setCookies = (loginResponse.headers as unknown as { getSetCookie?: () => string[] }).getSetCookie?.()
+      || Array.from(loginResponse.headers.entries())
         .filter(([key]) => key.toLowerCase() === 'set-cookie')
         .map(([, value]) => value)
     const cookies = setCookies.map(c => c.split(';')[0]).join('; ')
@@ -186,7 +186,7 @@ async function handleCheckoutComplete(
       if (order.state === 'AddingItems') {
         const customerDetails = session.customer_details
         // Stripe types don't include all fields - use type assertion for shipping_details
-        const shippingDetails = (session as unknown as { collected_information?: { shipping_details?: { name?: string; address?: { line1?: string; line2?: string; city?: string; postal_code?: string; country?: string } } }; shipping_details?: { name?: string; address?: { line1?: string; line2?: string; city?: string; postal_code?: string; country?: string } } }).collected_information?.shipping_details || (session as unknown as { shipping_details?: { name?: string; address?: { line1?: string; line2?: string; city?: string; postal_code?: string; country?: string } } }).shipping_details
+        const shippingDetails = (session as unknown as { collected_information?: { shipping_details?: { name?: string, address?: { line1?: string, line2?: string, city?: string, postal_code?: string, country?: string } } }, shipping_details?: { name?: string, address?: { line1?: string, line2?: string, city?: string, postal_code?: string, country?: string } } }).collected_information?.shipping_details || (session as unknown as { shipping_details?: { name?: string, address?: { line1?: string, line2?: string, city?: string, postal_code?: string, country?: string } } }).shipping_details
 
         // Create or set customer on the order
         const setCustomerResponse = await fetch(`${vendureUrl}/admin-api`, {

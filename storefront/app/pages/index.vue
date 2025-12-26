@@ -2,6 +2,7 @@
 const { syncCart, addToCart, updateQuantity, removeFromCart, cartItems, cartTotal, cartQuantity, isCartOpen, closeCart, isLoading, clearStorage } = useCart()
 const { setCustomerForOrder, setShippingAddress, getShippingMethods, setShippingMethod, transitionToArrangingPayment, resetOrderToAddingItems, getActiveOrder } = useVendure()
 const { createPaymentElement, createAddressElement, getAddressFromElement, processPaymentWithElement, destroyPaymentElement, destroyAddressElement, isLoading: isStripeLoading, error: stripeError } = useStripe()
+const { $analytics } = useNuxtApp()
 
 // Product data - matches Vendure catalog
 // In production: product ID 1, variant ID 2
@@ -48,7 +49,7 @@ const shippingInfo = ref({
   countryCode: 'US'
 })
 
-const shippingMethods = ref<Array<{ id: string; name: string; priceWithTax: number }>>([])
+const shippingMethods = ref<Array<{ id: string, name: string, priceWithTax: number }>>([])
 const selectedShippingMethod = ref('')
 
 // Sync cart on mount
@@ -64,8 +65,24 @@ const handleAddToCart = async () => {
     image: product.images[0]?.src
   })
   if (result.success) {
+    // Track add to cart event (convert cents to dollars for analytics)
+    $analytics?.trackAddToCart(
+      product.name,
+      product.name, // variant name same as product for single variant
+      product.price / 100,
+      quantity.value
+    )
     quantity.value = 1
   }
+}
+
+// Track cart opened/viewed
+const openCartWithTracking = () => {
+  isCartOpen.value = true
+  $analytics?.trackEvent('Cart Viewed', {
+    item_count: cartQuantity.value,
+    cart_total: cartTotal.value / 100
+  })
 }
 
 const formatPrice = (cents: number) => {
@@ -77,6 +94,15 @@ const formatPrice = (cents: number) => {
 
 const proceedToCheckout = async () => {
   if (cartItems.value.length === 0) return
+
+  // Track checkout button click
+  $analytics?.trackEvent('Checkout Button Clicked', {
+    cart_total: cartTotal.value / 100,
+    item_count: cartQuantity.value
+  })
+
+  // Track checkout started (convert cents to dollars for analytics)
+  $analytics?.trackCheckoutStarted(cartTotal.value / 100, cartQuantity.value)
 
   isProcessing.value = true
   checkoutError.value = ''
@@ -414,29 +440,47 @@ const specs = [
       <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center">
-            <UIcon name="i-lucide-cat" class="w-6 h-6 text-white" />
+            <UIcon
+              name="i-lucide-cat"
+              class="w-6 h-6 text-white"
+            />
           </div>
           <span class="font-bold text-xl">PurrfectPlay</span>
         </div>
 
         <div class="hidden md:flex items-center gap-6 text-sm">
-          <a href="#features" class="text-stone-600 hover:text-orange-500 transition-colors">Features</a>
-          <a href="#reviews" class="text-stone-600 hover:text-orange-500 transition-colors">Reviews</a>
-          <a href="#faq" class="text-stone-600 hover:text-orange-500 transition-colors">FAQ</a>
+          <a
+            href="#features"
+            class="text-stone-600 hover:text-orange-500 transition-colors"
+          >Features</a>
+          <a
+            href="#reviews"
+            class="text-stone-600 hover:text-orange-500 transition-colors"
+          >Reviews</a>
+          <a
+            href="#faq"
+            class="text-stone-600 hover:text-orange-500 transition-colors"
+          >FAQ</a>
         </div>
 
         <div class="flex items-center gap-3">
           <div class="hidden sm:flex items-center gap-1 text-sm text-stone-600">
-            <UIcon name="i-lucide-truck" class="w-4 h-4 text-orange-500" />
+            <UIcon
+              name="i-lucide-truck"
+              class="w-4 h-4 text-orange-500"
+            />
             Free Shipping
           </div>
           <UButton
             color="neutral"
             variant="ghost"
             class="relative"
-            @click="isCartOpen = true"
+            @click="openCartWithTracking"
           >
-            <UIcon name="i-lucide-shopping-bag" class="w-5 h-5" />
+            <UIcon
+              name="i-lucide-shopping-bag"
+              class="w-5 h-5"
+            />
             <span
               v-if="cartQuantity > 0"
               class="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white text-xs rounded-full flex items-center justify-center font-bold"
@@ -454,70 +498,113 @@ const specs = [
         <div class="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <!-- Left: Text Content -->
           <div class="text-white order-2 lg:order-1">
-          <!-- Badge -->
-          <div class="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 rounded-full text-sm font-semibold mb-6">
-            <UIcon name="i-heroicons-star-solid" class="w-4 h-4 text-white" />
-            #1 Rated Portable Cat Enclosure 2024
-          </div>
-
-          <!-- Headline -->
-          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
-            Give Your Indoor Cat
-            <span class="text-orange-400">Safe Outdoor Adventures</span>
-          </h1>
-
-          <!-- Subheadline with specific claim -->
-          <p class="text-xl lg:text-2xl text-white/90 mb-8 leading-relaxed">
-            The pop-up tent & tunnel that sets up in <span class="font-bold text-orange-300">5 seconds</span> and keeps your cat 100% secure. Join 847+ happy cat parents.
-          </p>
-
-          <!-- Quick Benefits -->
-          <div class="flex flex-wrap gap-4 mb-8">
-            <div v-for="benefit in benefits" :key="benefit.text" class="flex items-center gap-2 text-white/90">
-              <UIcon :name="benefit.icon" class="w-5 h-5 text-orange-400" />
-              <span>{{ benefit.text }}</span>
-            </div>
-          </div>
-
-          <!-- CTA Group -->
-          <div class="flex flex-col sm:flex-row gap-4 mb-6">
-            <UButton
-              size="xl"
-              class="px-8 py-4 text-lg font-bold shadow-xl shadow-orange-500/30 hover:shadow-orange-500/50 transition-all"
-              @click="handleAddToCart"
-              :loading="isLoading"
+            <!-- Badge -->
+            <div
+              v-animate:fade-up
+              class="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 rounded-full text-sm font-semibold mb-6"
             >
-              <UIcon name="i-lucide-shopping-cart" class="w-5 h-5 mr-2" />
-              Get Yours Now - {{ formatPrice(product.price) }}
-            </UButton>
-            <div class="flex items-center gap-2 text-white/80 text-sm">
-              <span class="line-through">{{ formatPrice(product.originalPrice) }}</span>
-              <span class="px-2 py-1 bg-green-500 text-white rounded font-semibold">SAVE 40%</span>
+              <UIcon
+                name="i-heroicons-star-solid"
+                class="w-4 h-4 text-white"
+              />
+              #1 Rated Portable Cat Enclosure 2024
             </div>
-          </div>
 
-          <!-- Trust Signals -->
-          <div class="flex flex-wrap items-center gap-6 text-sm text-white/70">
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-truck" class="w-5 h-5" />
-              Free Shipping
+            <!-- Headline -->
+            <h1
+              v-animate:fade-up="{ delay: 100 }"
+              class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6"
+            >
+              Give Your Indoor Cat
+              <span class="text-orange-400">Safe Outdoor Adventures</span>
+            </h1>
+
+            <!-- Subheadline with specific claim -->
+            <p
+              v-animate:fade-up="{ delay: 200 }"
+              class="text-xl lg:text-2xl text-white/90 mb-8 leading-relaxed"
+            >
+              The pop-up tent & tunnel that sets up in <span class="font-bold text-orange-300">5 seconds</span> and keeps your cat 100% secure. Join 847+ happy cat parents.
+            </p>
+
+            <!-- Quick Benefits -->
+            <div
+              v-animate:fade-up="{ delay: 300 }"
+              class="flex flex-wrap gap-4 mb-8"
+            >
+              <div
+                v-for="benefit in benefits"
+                :key="benefit.text"
+                class="flex items-center gap-2 text-white/90"
+              >
+                <UIcon
+                  :name="benefit.icon"
+                  class="w-5 h-5 text-orange-400"
+                />
+                <span>{{ benefit.text }}</span>
+              </div>
             </div>
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-shield-check" class="w-5 h-5" />
-              30-Day Guarantee
+
+            <!-- CTA Group -->
+            <div
+              v-animate:fade-up="{ delay: 400 }"
+              class="flex flex-col sm:flex-row gap-4 mb-6"
+            >
+              <UButton
+                size="xl"
+                class="px-8 py-4 text-lg font-bold shadow-xl shadow-orange-500/30 hover:shadow-orange-500/50 transition-all"
+                :loading="isLoading"
+                @click="handleAddToCart"
+              >
+                <UIcon
+                  name="i-lucide-shopping-cart"
+                  class="w-5 h-5 mr-2"
+                />
+                Get Yours Now - {{ formatPrice(product.price) }}
+              </UButton>
+              <div class="flex items-center gap-2 text-white/80 text-sm">
+                <span class="line-through">{{ formatPrice(product.originalPrice) }}</span>
+                <span class="px-2 py-1 bg-green-500 text-white rounded font-semibold">SAVE 40%</span>
+              </div>
             </div>
-            <div class="flex items-center gap-2">
-              <UIcon name="i-heroicons-star-solid" class="w-5 h-5 text-amber-400" />
-              5.0/5 (847 reviews)
+
+            <!-- Trust Signals -->
+            <div
+              v-animate:fade-up="{ delay: 500 }"
+              class="flex flex-wrap items-center gap-6 text-sm text-white/70"
+            >
+              <div class="flex items-center gap-2">
+                <UIcon
+                  name="i-lucide-truck"
+                  class="w-5 h-5"
+                />
+                Free Shipping
+              </div>
+              <div class="flex items-center gap-2">
+                <UIcon
+                  name="i-lucide-shield-check"
+                  class="w-5 h-5"
+                />
+                30-Day Guarantee
+              </div>
+              <div class="flex items-center gap-2">
+                <UIcon
+                  name="i-heroicons-star-solid"
+                  class="w-5 h-5 text-amber-400"
+                />
+                5.0/5 (847 reviews)
+              </div>
             </div>
-          </div>
           </div>
 
           <!-- Right: Product Image -->
-          <div class="order-1 lg:order-2 flex justify-center">
+          <div
+            v-animate:fade-in="{ delay: 200 }"
+            class="order-1 lg:order-2 flex justify-center"
+          >
             <div class="relative">
               <img
-                src="/images/product/product-full.webp"
+                src="/images/product/tiktokspeech.png"
                 alt="PurrfectPlay Cat Tent and Tunnel Set with Carry Bag"
                 class="w-full max-w-lg drop-shadow-2xl"
               >
@@ -530,7 +617,6 @@ const specs = [
         </div>
       </div>
     </section>
-
 
     <!-- Problem/Solution Section -->
     <section class="py-16 lg:py-24 bg-white">
@@ -545,12 +631,24 @@ const specs = [
         </div>
 
         <div class="grid md:grid-cols-3 gap-8">
-          <div v-for="item in problemSolutions" :key="item.problem" class="text-center">
+          <div
+            v-for="(item, index) in problemSolutions"
+            :key="item.problem"
+            v-animate:fade-up="{ delay: index * 100 }"
+            class="text-center"
+          >
             <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
-              <UIcon :name="item.icon" class="w-8 h-8 text-red-500" />
+              <UIcon
+                :name="item.icon"
+                class="w-8 h-8 text-red-500"
+              />
             </div>
-            <p class="text-stone-500 mb-2 line-through">{{ item.problem }}</p>
-            <p class="font-semibold text-lg text-stone-900">{{ item.solution }}</p>
+            <p class="text-stone-500 mb-2 line-through">
+              {{ item.problem }}
+            </p>
+            <p class="font-semibold text-lg text-stone-900">
+              {{ item.solution }}
+            </p>
           </div>
         </div>
       </div>
@@ -571,7 +669,10 @@ const specs = [
         <!-- Image Grid -->
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
           <!-- Main lifestyle shot - large -->
-          <div class="lg:col-span-2 rounded-2xl overflow-hidden shadow-lg aspect-[4/3]">
+          <div
+            v-animate:fade-in
+            class="lg:col-span-2 rounded-2xl overflow-hidden shadow-lg aspect-[4/3]"
+          >
             <img
               src="/images/product/gem1.jpg"
               alt="Cat enjoying the tent and tunnel"
@@ -579,7 +680,10 @@ const specs = [
             >
           </div>
           <!-- Dimensions diagram -->
-          <div class="rounded-2xl overflow-hidden shadow-lg bg-white p-4 flex items-center justify-center">
+          <div
+            v-animate:fade-up="{ delay: 100 }"
+            class="rounded-2xl overflow-hidden shadow-lg bg-white p-4 flex items-center justify-center"
+          >
             <img
               src="/images/product/dimensions.jpg"
               alt="Product dimensions - 117cm tent, 117cm tunnel"
@@ -587,7 +691,10 @@ const specs = [
             >
           </div>
           <!-- Cat top view -->
-          <div class="rounded-2xl overflow-hidden shadow-lg aspect-square">
+          <div
+            v-animate:fade-up="{ delay: 200 }"
+            class="rounded-2xl overflow-hidden shadow-lg aspect-square"
+          >
             <img
               src="/images/product/cat-topview.jpeg"
               alt="Cat relaxing inside the tent"
@@ -595,7 +702,10 @@ const specs = [
             >
           </div>
           <!-- Detail connection -->
-          <div class="rounded-2xl overflow-hidden shadow-lg aspect-square">
+          <div
+            v-animate:fade-up="{ delay: 300 }"
+            class="rounded-2xl overflow-hidden shadow-lg aspect-square"
+          >
             <img
               src="/images/product/detail-connection.jpg"
               alt="Secure tent and tunnel connection"
@@ -603,7 +713,10 @@ const specs = [
             >
           </div>
           <!-- Carry bag -->
-          <div class="rounded-2xl overflow-hidden shadow-lg aspect-square">
+          <div
+            v-animate:fade-up="{ delay: 400 }"
+            class="rounded-2xl overflow-hidden shadow-lg aspect-square"
+          >
             <img
               src="/images/product/carry-bag.jpg"
               alt="Compact carry bag for easy storage"
@@ -613,25 +726,43 @@ const specs = [
         </div>
 
         <!-- Stats below gallery -->
-        <div class="grid grid-cols-3 gap-4 mt-12 max-w-3xl mx-auto text-center">
+        <div
+          v-animate:fade-up="{ delay: 500 }"
+          class="grid grid-cols-3 gap-4 mt-12 max-w-3xl mx-auto text-center"
+        >
           <div class="p-4 bg-white rounded-xl shadow-sm">
-            <p class="text-3xl font-bold text-orange-500">5 sec</p>
-            <p class="text-sm text-stone-600">Setup Time</p>
+            <p class="text-3xl font-bold text-orange-500">
+              5 sec
+            </p>
+            <p class="text-sm text-stone-600">
+              Setup Time
+            </p>
           </div>
           <div class="p-4 bg-white rounded-xl shadow-sm">
-            <p class="text-3xl font-bold text-orange-500">2.5 lbs</p>
-            <p class="text-sm text-stone-600">Total Weight</p>
+            <p class="text-3xl font-bold text-orange-500">
+              2.5 lbs
+            </p>
+            <p class="text-sm text-stone-600">
+              Total Weight
+            </p>
           </div>
           <div class="p-4 bg-white rounded-xl shadow-sm">
-            <p class="text-3xl font-bold text-orange-500">847+</p>
-            <p class="text-sm text-stone-600">Happy Cats</p>
+            <p class="text-3xl font-bold text-orange-500">
+              847+
+            </p>
+            <p class="text-sm text-stone-600">
+              Happy Cats
+            </p>
           </div>
         </div>
       </div>
     </section>
 
     <!-- Features Section -->
-    <section id="features" class="py-16 lg:py-24 bg-white">
+    <section
+      id="features"
+      class="py-16 lg:py-24 bg-white"
+    >
       <div class="max-w-7xl mx-auto px-4">
         <div class="text-center max-w-3xl mx-auto mb-16">
           <h2 class="text-3xl lg:text-4xl font-bold mb-4">
@@ -645,7 +776,10 @@ const specs = [
             :key="feature.title"
             class="grid lg:grid-cols-2 gap-12 items-center"
           >
-            <div :class="index % 2 === 1 ? 'lg:order-2' : ''">
+            <div
+              v-animate:fade-in
+              :class="index % 2 === 1 ? 'lg:order-2' : ''"
+            >
               <div class="aspect-[4/3] rounded-2xl overflow-hidden shadow-xl">
                 <img
                   :src="feature.image"
@@ -654,13 +788,20 @@ const specs = [
                 >
               </div>
             </div>
-            <div :class="index % 2 === 1 ? 'lg:order-1' : ''">
-              <h3 class="text-2xl lg:text-3xl font-bold mb-4">{{ feature.title }}</h3>
-              <p class="text-lg text-stone-600 mb-6">{{ feature.description }}</p>
+            <div
+              v-animate:fade-up="{ delay: 200 }"
+              :class="index % 2 === 1 ? 'lg:order-1' : ''"
+            >
+              <h3 class="text-2xl lg:text-3xl font-bold mb-4">
+                {{ feature.title }}
+              </h3>
+              <p class="text-lg text-stone-600 mb-6">
+                {{ feature.description }}
+              </p>
               <UButton
                 size="lg"
-                @click="handleAddToCart"
                 :loading="isLoading"
+                @click="handleAddToCart"
               >
                 Order Now - {{ formatPrice(product.price) }}
               </UButton>
@@ -691,7 +832,11 @@ const specs = [
                 :class="selectedImage === index ? 'border-orange-500 ring-2 ring-orange-500/20' : 'border-stone-200 hover:border-orange-300'"
                 @click="selectedImage = index"
               >
-                <img :src="image.src" :alt="image.alt" class="w-full h-full object-cover">
+                <img
+                  :src="image.src"
+                  :alt="image.alt"
+                  class="w-full h-full object-cover"
+                >
               </button>
             </div>
           </div>
@@ -701,12 +846,21 @@ const specs = [
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <div class="flex">
-                  <UIcon v-for="i in 5" :key="i" name="i-heroicons-star-solid" class="w-5 h-5 text-amber-400" />
+                  <UIcon
+                    v-for="i in 5"
+                    :key="i"
+                    name="i-heroicons-star-solid"
+                    class="w-5 h-5 text-amber-400"
+                  />
                 </div>
                 <span class="text-stone-600">{{ product.rating }}.0 ({{ product.reviewCount }} reviews)</span>
               </div>
-              <h2 class="text-3xl font-bold mb-2">{{ product.name }}</h2>
-              <p class="text-lg text-stone-600">{{ product.tagline }}</p>
+              <h2 class="text-3xl font-bold mb-2">
+                {{ product.name }}
+              </h2>
+              <p class="text-lg text-stone-600">
+                {{ product.tagline }}
+              </p>
             </div>
 
             <div class="flex items-baseline gap-3">
@@ -717,22 +871,36 @@ const specs = [
 
             <!-- What's Included -->
             <div class="bg-white rounded-xl p-6 border border-stone-200">
-              <h4 class="font-bold mb-4">What's Included:</h4>
+              <h4 class="font-bold mb-4">
+                What's Included:
+              </h4>
               <ul class="space-y-2">
                 <li class="flex items-center gap-2">
-                  <UIcon name="i-lucide-check" class="w-5 h-5 text-green-500" />
+                  <UIcon
+                    name="i-lucide-check"
+                    class="w-5 h-5 text-green-500"
+                  />
                   24" x 24" x 24" Pop-Up Tent
                 </li>
                 <li class="flex items-center gap-2">
-                  <UIcon name="i-lucide-check" class="w-5 h-5 text-green-500" />
+                  <UIcon
+                    name="i-lucide-check"
+                    class="w-5 h-5 text-green-500"
+                  />
                   47" Extendable Tunnel
                 </li>
                 <li class="flex items-center gap-2">
-                  <UIcon name="i-lucide-check" class="w-5 h-5 text-green-500" />
+                  <UIcon
+                    name="i-lucide-check"
+                    class="w-5 h-5 text-green-500"
+                  />
                   Compact Carry Bag
                 </li>
                 <li class="flex items-center gap-2">
-                  <UIcon name="i-lucide-check" class="w-5 h-5 text-green-500" />
+                  <UIcon
+                    name="i-lucide-check"
+                    class="w-5 h-5 text-green-500"
+                  />
                   Ground Stakes (4x)
                 </li>
               </ul>
@@ -747,14 +915,20 @@ const specs = [
                     class="w-12 h-12 flex items-center justify-center hover:bg-stone-50 transition-colors"
                     @click="quantity = Math.max(1, quantity - 1)"
                   >
-                    <UIcon name="i-lucide-minus" class="w-4 h-4" />
+                    <UIcon
+                      name="i-lucide-minus"
+                      class="w-4 h-4"
+                    />
                   </button>
                   <span class="w-12 text-center font-semibold">{{ quantity }}</span>
                   <button
                     class="w-12 h-12 flex items-center justify-center hover:bg-stone-50 transition-colors"
                     @click="quantity++"
                   >
-                    <UIcon name="i-lucide-plus" class="w-4 h-4" />
+                    <UIcon
+                      name="i-lucide-plus"
+                      class="w-4 h-4"
+                    />
                   </button>
                 </div>
               </div>
@@ -766,17 +940,26 @@ const specs = [
                 :loading="isLoading"
                 @click="handleAddToCart"
               >
-                <UIcon name="i-lucide-shopping-cart" class="w-5 h-5 mr-2" />
+                <UIcon
+                  name="i-lucide-shopping-cart"
+                  class="w-5 h-5 mr-2"
+                />
                 Add to Cart - {{ formatPrice(product.price * quantity) }}
               </UButton>
 
               <div class="flex items-center justify-center gap-6 text-sm text-stone-500">
                 <div class="flex items-center gap-1">
-                  <UIcon name="i-lucide-truck" class="w-4 h-4" />
+                  <UIcon
+                    name="i-lucide-truck"
+                    class="w-4 h-4"
+                  />
                   Free Shipping
                 </div>
                 <div class="flex items-center gap-1">
-                  <UIcon name="i-lucide-shield-check" class="w-4 h-4" />
+                  <UIcon
+                    name="i-lucide-shield-check"
+                    class="w-4 h-4"
+                  />
                   30-Day Guarantee
                 </div>
               </div>
@@ -784,11 +967,20 @@ const specs = [
 
             <!-- Specs -->
             <div class="bg-stone-100 rounded-xl p-6">
-              <h4 class="font-bold mb-4">Specifications</h4>
+              <h4 class="font-bold mb-4">
+                Specifications
+              </h4>
               <div class="grid grid-cols-2 gap-4">
-                <div v-for="spec in specs" :key="spec.label">
-                  <p class="text-sm text-stone-500">{{ spec.label }}</p>
-                  <p class="font-medium">{{ spec.value }}</p>
+                <div
+                  v-for="spec in specs"
+                  :key="spec.label"
+                >
+                  <p class="text-sm text-stone-500">
+                    {{ spec.label }}
+                  </p>
+                  <p class="font-medium">
+                    {{ spec.value }}
+                  </p>
                 </div>
               </div>
             </div>
@@ -798,36 +990,63 @@ const specs = [
     </section>
 
     <!-- Reviews Section -->
-    <section id="reviews" class="py-16 lg:py-24 bg-white">
+    <section
+      id="reviews"
+      class="py-16 lg:py-24 bg-white"
+    >
       <div class="max-w-7xl mx-auto px-4">
         <div class="text-center mb-12">
           <div class="flex items-center justify-center gap-1 mb-4">
-            <UIcon v-for="i in 5" :key="i" name="i-heroicons-star-solid" class="w-8 h-8 text-amber-400" />
+            <UIcon
+              v-for="i in 5"
+              :key="i"
+              name="i-heroicons-star-solid"
+              class="w-8 h-8 text-amber-400"
+            />
           </div>
           <h2 class="text-3xl lg:text-4xl font-bold mb-2">
             5 out of 5 Stars
           </h2>
-          <p class="text-lg text-stone-600">Based on {{ product.reviewCount }} verified reviews</p>
+          <p class="text-lg text-stone-600">
+            Based on {{ product.reviewCount }} verified reviews
+          </p>
         </div>
 
         <div class="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
           <div
-            v-for="review in reviews"
+            v-for="(review, index) in reviews"
             :key="review.name"
+            v-animate:fade-up="{ delay: index * 100 }"
             class="bg-stone-50 rounded-2xl p-6"
           >
             <div class="flex items-center gap-1 mb-3">
-              <UIcon v-for="i in review.rating" :key="i" name="i-heroicons-star-solid" class="w-5 h-5 text-amber-400" />
+              <UIcon
+                v-for="i in review.rating"
+                :key="i"
+                name="i-heroicons-star-solid"
+                class="w-5 h-5 text-amber-400"
+              />
             </div>
-            <h4 class="font-bold text-lg mb-2">{{ review.title }}</h4>
-            <p class="text-stone-600 mb-4">"{{ review.text }}"</p>
+            <h4 class="font-bold text-lg mb-2">
+              {{ review.title }}
+            </h4>
+            <p class="text-stone-600 mb-4">
+              "{{ review.text }}"
+            </p>
             <div class="flex items-center justify-between">
               <div>
-                <p class="font-medium">{{ review.name }}</p>
-                <p class="text-sm text-stone-500">{{ review.location }}</p>
+                <p class="font-medium">
+                  {{ review.name }}
+                </p>
+                <p class="text-sm text-stone-500">
+                  {{ review.location }}
+                </p>
               </div>
               <div class="flex items-center gap-2 text-sm text-stone-500">
-                <UIcon name="i-lucide-check-circle" class="w-4 h-4 text-green-500" />
+                <UIcon
+                  name="i-lucide-check-circle"
+                  class="w-4 h-4 text-green-500"
+                />
                 Verified Purchase
               </div>
             </div>
@@ -837,7 +1056,10 @@ const specs = [
     </section>
 
     <!-- FAQ Section -->
-    <section id="faq" class="py-16 lg:py-24 bg-stone-50">
+    <section
+      id="faq"
+      class="py-16 lg:py-24 bg-stone-50"
+    >
       <div class="max-w-3xl mx-auto px-4">
         <div class="text-center mb-12">
           <h2 class="text-3xl lg:text-4xl font-bold mb-4">
@@ -847,15 +1069,21 @@ const specs = [
 
         <div class="space-y-4">
           <details
-            v-for="faq in faqs"
+            v-for="(faq, index) in faqs"
             :key="faq.question"
+            v-animate:fade-up="{ delay: index * 100 }"
             class="bg-white rounded-xl p-6 group"
           >
             <summary class="font-semibold text-lg cursor-pointer flex items-center justify-between">
               {{ faq.question }}
-              <UIcon name="i-lucide-chevron-down" class="w-5 h-5 transition-transform group-open:rotate-180" />
+              <UIcon
+                name="i-lucide-chevron-down"
+                class="w-5 h-5 transition-transform group-open:rotate-180"
+              />
             </summary>
-            <p class="mt-4 text-stone-600">{{ faq.answer }}</p>
+            <p class="mt-4 text-stone-600">
+              {{ faq.answer }}
+            </p>
           </details>
         </div>
       </div>
@@ -863,7 +1091,10 @@ const specs = [
 
     <!-- Final CTA -->
     <section class="py-16 lg:py-24 bg-gradient-to-r from-orange-500 to-amber-500 text-white">
-      <div class="max-w-4xl mx-auto px-4 text-center">
+      <div
+        v-animate:fade-up
+        class="max-w-4xl mx-auto px-4 text-center"
+      >
         <h2 class="text-3xl lg:text-5xl font-bold mb-6">
           Give Your Cat the Gift of Adventure
         </h2>
@@ -875,24 +1106,36 @@ const specs = [
           size="xl"
           color="neutral"
           class="px-10 py-5 text-xl font-bold bg-white text-orange-600 hover:bg-orange-50 shadow-xl"
-          @click="handleAddToCart"
           :loading="isLoading"
+          @click="handleAddToCart"
         >
-          <UIcon name="i-lucide-shopping-cart" class="w-6 h-6 mr-2" />
+          <UIcon
+            name="i-lucide-shopping-cart"
+            class="w-6 h-6 mr-2"
+          />
           Order Now - {{ formatPrice(product.price) }}
         </UButton>
 
         <div class="flex items-center justify-center gap-8 mt-8 text-orange-100">
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-truck" class="w-5 h-5" />
+            <UIcon
+              name="i-lucide-truck"
+              class="w-5 h-5"
+            />
             Free Shipping
           </div>
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-refresh-cw" class="w-5 h-5" />
+            <UIcon
+              name="i-lucide-refresh-cw"
+              class="w-5 h-5"
+            />
             30-Day Returns
           </div>
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-shield" class="w-5 h-5" />
+            <UIcon
+              name="i-lucide-shield"
+              class="w-5 h-5"
+            />
             Satisfaction Guaranteed
           </div>
         </div>
@@ -906,40 +1149,104 @@ const specs = [
           <div>
             <div class="flex items-center gap-2 mb-4">
               <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center">
-                <UIcon name="i-lucide-cat" class="w-6 h-6 text-white" />
+                <UIcon
+                  name="i-lucide-cat"
+                  class="w-6 h-6 text-white"
+                />
               </div>
               <span class="font-bold text-lg text-white">PurrfectPlay</span>
             </div>
-            <p class="text-sm">Safe outdoor adventures for indoor cats.</p>
+            <p class="text-sm">
+              Safe outdoor adventures for indoor cats.
+            </p>
           </div>
           <div>
-            <h4 class="font-semibold text-white mb-4">Shop</h4>
+            <h4 class="font-semibold text-white mb-4">
+              Shop
+            </h4>
             <ul class="space-y-2 text-sm">
-              <li><a href="#" class="hover:text-orange-400 transition-colors">Cat Tent & Tunnel</a></li>
-              <li><a href="#" class="hover:text-orange-400 transition-colors">Accessories</a></li>
-              <li><a href="#" class="hover:text-orange-400 transition-colors">Gift Cards</a></li>
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-orange-400 transition-colors"
+                >Cat Tent & Tunnel</a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-orange-400 transition-colors"
+                >Accessories</a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-orange-400 transition-colors"
+                >Gift Cards</a>
+              </li>
             </ul>
           </div>
           <div>
-            <h4 class="font-semibold text-white mb-4">Support</h4>
+            <h4 class="font-semibold text-white mb-4">
+              Support
+            </h4>
             <ul class="space-y-2 text-sm">
-              <li><a href="#faq" class="hover:text-orange-400 transition-colors">FAQ</a></li>
-              <li><a href="#" class="hover:text-orange-400 transition-colors">Contact Us</a></li>
-              <li><a href="#" class="hover:text-orange-400 transition-colors">Shipping Info</a></li>
-              <li><a href="#" class="hover:text-orange-400 transition-colors">Returns</a></li>
+              <li>
+                <a
+                  href="#faq"
+                  class="hover:text-orange-400 transition-colors"
+                >FAQ</a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-orange-400 transition-colors"
+                >Contact Us</a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-orange-400 transition-colors"
+                >Shipping Info</a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-orange-400 transition-colors"
+                >Returns</a>
+              </li>
             </ul>
           </div>
           <div>
-            <h4 class="font-semibold text-white mb-4">Connect</h4>
+            <h4 class="font-semibold text-white mb-4">
+              Connect
+            </h4>
             <div class="flex gap-4">
-              <a href="#" class="hover:text-orange-400 transition-colors">
-                <UIcon name="i-simple-icons-instagram" class="w-5 h-5" />
+              <a
+                href="#"
+                class="hover:text-orange-400 transition-colors"
+              >
+                <UIcon
+                  name="i-simple-icons-instagram"
+                  class="w-5 h-5"
+                />
               </a>
-              <a href="#" class="hover:text-orange-400 transition-colors">
-                <UIcon name="i-simple-icons-facebook" class="w-5 h-5" />
+              <a
+                href="#"
+                class="hover:text-orange-400 transition-colors"
+              >
+                <UIcon
+                  name="i-simple-icons-facebook"
+                  class="w-5 h-5"
+                />
               </a>
-              <a href="#" class="hover:text-orange-400 transition-colors">
-                <UIcon name="i-simple-icons-tiktok" class="w-5 h-5" />
+              <a
+                href="#"
+                class="hover:text-orange-400 transition-colors"
+              >
+                <UIcon
+                  name="i-simple-icons-tiktok"
+                  class="w-5 h-5"
+                />
               </a>
             </div>
           </div>
@@ -955,18 +1262,38 @@ const specs = [
       <template #content>
         <div class="flex flex-col h-full bg-white">
           <div class="flex items-center justify-between p-4 border-b border-stone-200">
-            <h2 class="text-lg font-bold">Shopping Cart ({{ cartQuantity }})</h2>
-            <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="closeCart" />
+            <h2 class="text-lg font-bold">
+              Shopping Cart ({{ cartQuantity }})
+            </h2>
+            <UButton
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-x"
+              @click="closeCart"
+            />
           </div>
 
           <div class="flex-1 overflow-y-auto p-4">
-            <div v-if="cartItems.length === 0" class="text-center py-12">
-              <UIcon name="i-lucide-shopping-bag" class="w-16 h-16 text-stone-300 mx-auto mb-4" />
-              <p class="text-stone-500 mb-4">Your cart is empty</p>
-              <UButton @click="closeCart">Continue Shopping</UButton>
+            <div
+              v-if="cartItems.length === 0"
+              class="text-center py-12"
+            >
+              <UIcon
+                name="i-lucide-shopping-bag"
+                class="w-16 h-16 text-stone-300 mx-auto mb-4"
+              />
+              <p class="text-stone-500 mb-4">
+                Your cart is empty
+              </p>
+              <UButton @click="closeCart">
+                Continue Shopping
+              </UButton>
             </div>
 
-            <div v-else class="space-y-4">
+            <div
+              v-else
+              class="space-y-4"
+            >
               <div
                 v-for="item in cartItems"
                 :key="item.id"
@@ -980,22 +1307,32 @@ const specs = [
                   >
                 </div>
                 <div class="flex-1 min-w-0">
-                  <h4 class="font-medium text-sm truncate">{{ item.name }}</h4>
-                  <p class="text-sm text-stone-500">{{ item.variantName }}</p>
+                  <h4 class="font-medium text-sm truncate">
+                    {{ item.name }}
+                  </h4>
+                  <p class="text-sm text-stone-500">
+                    {{ item.variantName }}
+                  </p>
                   <div class="flex items-center justify-between mt-2">
                     <div class="flex items-center border border-stone-200 rounded-lg overflow-hidden bg-white">
                       <button
                         class="w-8 h-8 flex items-center justify-center hover:bg-stone-100"
                         @click="updateQuantity(item.id, item.quantity - 1)"
                       >
-                        <UIcon name="i-lucide-minus" class="w-3 h-3" />
+                        <UIcon
+                          name="i-lucide-minus"
+                          class="w-3 h-3"
+                        />
                       </button>
                       <span class="w-8 text-center text-sm">{{ item.quantity }}</span>
                       <button
                         class="w-8 h-8 flex items-center justify-center hover:bg-stone-100"
                         @click="updateQuantity(item.id, item.quantity + 1)"
                       >
-                        <UIcon name="i-lucide-plus" class="w-3 h-3" />
+                        <UIcon
+                          name="i-lucide-plus"
+                          class="w-3 h-3"
+                        />
                       </button>
                     </div>
                     <span class="font-semibold">{{ formatPrice(item.lineTotal) }}</span>
@@ -1005,13 +1342,19 @@ const specs = [
                   class="text-stone-400 hover:text-red-500 transition-colors"
                   @click="removeFromCart(item.id)"
                 >
-                  <UIcon name="i-lucide-trash-2" class="w-5 h-5" />
+                  <UIcon
+                    name="i-lucide-trash-2"
+                    class="w-5 h-5"
+                  />
                 </button>
               </div>
             </div>
           </div>
 
-          <div v-if="cartItems.length > 0" class="p-4 border-t border-stone-200 space-y-4 bg-stone-50">
+          <div
+            v-if="cartItems.length > 0"
+            class="p-4 border-t border-stone-200 space-y-4 bg-stone-50"
+          >
             <div class="flex justify-between text-lg font-bold">
               <span>Total</span>
               <span>{{ formatPrice(cartTotal) }}</span>
@@ -1023,7 +1366,10 @@ const specs = [
               @click="proceedToCheckout"
             >
               Checkout
-              <UIcon name="i-lucide-arrow-right" class="w-5 h-5 ml-2" />
+              <UIcon
+                name="i-lucide-arrow-right"
+                class="w-5 h-5 ml-2"
+              />
             </UButton>
             <p class="text-center text-xs text-stone-500">
               Free shipping • 30-day returns • Secure checkout
@@ -1034,21 +1380,31 @@ const specs = [
     </USlideover>
 
     <!-- Checkout Modal - Modern Full Width -->
-    <UModal v-model:open="isCheckoutOpen" :ui="{ width: 'sm:max-w-xl' }">
+    <UModal
+      v-model:open="isCheckoutOpen"
+      :ui="{ width: 'sm:max-w-xl' }"
+    >
       <template #content>
         <div class="bg-white rounded-2xl flex flex-col max-h-[90vh]">
           <!-- Header -->
           <div class="bg-stone-50 px-6 py-4 border-b border-stone-200">
             <div class="flex items-center justify-between">
               <div>
-                <h2 class="text-xl font-bold text-stone-900">Checkout</h2>
-                <p class="text-sm text-stone-500">Step {{ Math.min(checkoutStep, 3) }} of 3</p>
+                <h2 class="text-xl font-bold text-stone-900">
+                  Checkout
+                </h2>
+                <p class="text-sm text-stone-500">
+                  Step {{ Math.min(checkoutStep, 3) }} of 3
+                </p>
               </div>
               <button
                 class="w-10 h-10 rounded-full bg-white border border-stone-200 flex items-center justify-center hover:bg-stone-100 transition-colors"
                 @click="closeCheckout"
               >
-                <UIcon name="i-lucide-x" class="w-5 h-5 text-stone-500" />
+                <UIcon
+                  name="i-lucide-x"
+                  class="w-5 h-5 text-stone-500"
+                />
               </button>
             </div>
 
@@ -1064,20 +1420,35 @@ const specs = [
           </div>
 
           <!-- Error Message -->
-          <div v-if="checkoutError" class="mx-6 mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div
+            v-if="checkoutError"
+            class="mx-6 mt-4 p-4 bg-red-50 border border-red-200 rounded-xl"
+          >
             <div class="flex items-center gap-3">
-              <UIcon name="i-lucide-alert-circle" class="w-5 h-5 text-red-500 flex-shrink-0" />
-              <p class="text-sm text-red-700">{{ checkoutError }}</p>
+              <UIcon
+                name="i-lucide-alert-circle"
+                class="w-5 h-5 text-red-500 flex-shrink-0"
+              />
+              <p class="text-sm text-red-700">
+                {{ checkoutError }}
+              </p>
             </div>
           </div>
 
           <!-- Content (scrollable) -->
           <div class="p-6 overflow-y-auto flex-1">
             <!-- Step 1: Contact Information -->
-            <div v-if="checkoutStep === 1" class="space-y-5">
+            <div
+              v-if="checkoutStep === 1"
+              class="space-y-5"
+            >
               <div>
-                <h3 class="text-lg font-semibold text-stone-900 mb-1">Contact Information</h3>
-                <p class="text-sm text-stone-500">We'll use this to send your order confirmation.</p>
+                <h3 class="text-lg font-semibold text-stone-900 mb-1">
+                  Contact Information
+                </h3>
+                <p class="text-sm text-stone-500">
+                  We'll use this to send your order confirmation.
+                </p>
               </div>
 
               <div class="grid grid-cols-2 gap-4">
@@ -1116,17 +1487,31 @@ const specs = [
                 :disabled="isProcessing || !customerInfo.firstName || !customerInfo.lastName || !customerInfo.emailAddress"
                 @click="submitCustomerInfo"
               >
-                <span v-if="isProcessing" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span
+                  v-if="isProcessing"
+                  class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"
+                />
                 <span v-else>Continue to Shipping</span>
-                <UIcon v-if="!isProcessing" name="i-lucide-arrow-right" class="w-5 h-5" />
+                <UIcon
+                  v-if="!isProcessing"
+                  name="i-lucide-arrow-right"
+                  class="w-5 h-5"
+                />
               </button>
             </div>
 
             <!-- Step 2: Shipping Address -->
-            <div v-if="checkoutStep === 2" class="space-y-5">
+            <div
+              v-if="checkoutStep === 2"
+              class="space-y-5"
+            >
               <div>
-                <h3 class="text-lg font-semibold text-stone-900 mb-1">Shipping Address</h3>
-                <p class="text-sm text-stone-500">Where should we send your order?</p>
+                <h3 class="text-lg font-semibold text-stone-900 mb-1">
+                  Shipping Address
+                </h3>
+                <p class="text-sm text-stone-500">
+                  Where should we send your order?
+                </p>
               </div>
 
               <!-- Stripe Address Element with autocomplete -->
@@ -1147,23 +1532,39 @@ const specs = [
                   :disabled="isProcessing"
                   @click="submitShippingInfo"
                 >
-                  <span v-if="isProcessing" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span
+                    v-if="isProcessing"
+                    class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"
+                  />
                   <span v-else>Continue to Payment</span>
-                  <UIcon v-if="!isProcessing" name="i-lucide-arrow-right" class="w-5 h-5" />
+                  <UIcon
+                    v-if="!isProcessing"
+                    name="i-lucide-arrow-right"
+                    class="w-5 h-5"
+                  />
                 </button>
               </div>
             </div>
 
             <!-- Step 3: Payment (Stripe Payment Element - supports ALL payment methods) -->
-            <div v-if="checkoutStep === 3" class="space-y-5">
+            <div
+              v-if="checkoutStep === 3"
+              class="space-y-5"
+            >
               <div>
-                <h3 class="text-lg font-semibold text-stone-900 mb-1">Payment</h3>
-                <p class="text-sm text-stone-500">Choose your preferred payment method.</p>
+                <h3 class="text-lg font-semibold text-stone-900 mb-1">
+                  Payment
+                </h3>
+                <p class="text-sm text-stone-500">
+                  Choose your preferred payment method.
+                </p>
               </div>
 
               <!-- Order Summary -->
               <div class="bg-stone-50 rounded-xl p-4 space-y-3">
-                <h4 class="font-semibold text-stone-900">Order Summary</h4>
+                <h4 class="font-semibold text-stone-900">
+                  Order Summary
+                </h4>
                 <div class="space-y-2 text-sm">
                   <div class="flex justify-between">
                     <span class="text-stone-600">Subtotal</span>
@@ -1187,12 +1588,20 @@ const specs = [
                   id="stripe-payment-element"
                   class="min-h-[200px] p-4 rounded-xl border border-stone-300 bg-white"
                 />
-                <p v-if="stripeError" class="text-sm text-red-500">{{ stripeError }}</p>
+                <p
+                  v-if="stripeError"
+                  class="text-sm text-red-500"
+                >
+                  {{ stripeError }}
+                </p>
               </div>
 
               <!-- Security Notice -->
               <div class="flex items-center gap-2 text-sm text-stone-500">
-                <UIcon name="i-lucide-lock" class="w-4 h-4" />
+                <UIcon
+                  name="i-lucide-lock"
+                  class="w-4 h-4"
+                />
                 <span>Your payment is secure and encrypted by Stripe</span>
               </div>
 
@@ -1208,20 +1617,37 @@ const specs = [
                   :disabled="isProcessing || isStripeLoading"
                   @click="completeOrder"
                 >
-                  <span v-if="isProcessing || isStripeLoading" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <UIcon v-else name="i-lucide-lock" class="w-5 h-5" />
+                  <span
+                    v-if="isProcessing || isStripeLoading"
+                    class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"
+                  />
+                  <UIcon
+                    v-else
+                    name="i-lucide-lock"
+                    class="w-5 h-5"
+                  />
                   <span v-if="!isProcessing && !isStripeLoading">Pay {{ formatPrice(cartTotal) }}</span>
                 </button>
               </div>
             </div>
 
             <!-- Step 4: Confirmation -->
-            <div v-if="checkoutStep === 4" class="text-center py-8">
+            <div
+              v-if="checkoutStep === 4"
+              class="text-center py-8"
+            >
               <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <UIcon name="i-lucide-check" class="w-10 h-10 text-green-600" />
+                <UIcon
+                  name="i-lucide-check"
+                  class="w-10 h-10 text-green-600"
+                />
               </div>
-              <h3 class="text-2xl font-bold text-stone-900 mb-2">Order Confirmed!</h3>
-              <p class="text-stone-600 mb-2">Order #{{ orderCode }}</p>
+              <h3 class="text-2xl font-bold text-stone-900 mb-2">
+                Order Confirmed!
+              </h3>
+              <p class="text-stone-600 mb-2">
+                Order #{{ orderCode }}
+              </p>
               <p class="text-stone-500 mb-8">
                 Thank you for your purchase! A confirmation email has been sent to {{ customerInfo.emailAddress }}.
               </p>

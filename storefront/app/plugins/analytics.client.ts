@@ -1,4 +1,5 @@
 import { init as initPlausible, track as trackPlausible } from '@plausible-analytics/tracker'
+import posthog from 'posthog-js'
 
 export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig()
@@ -30,33 +31,32 @@ export default defineNuxtPlugin(() => {
     }
   }
 
-  // PostHog Analytics (optional)
+  // PostHog Analytics (using official posthog-js package)
   const posthogKey = config.public.posthogKey as string
   const posthogHost = (config.public.posthogHost as string) || 'https://us.i.posthog.com'
+  const posthogInitialized = !!(posthogKey && typeof window !== 'undefined')
 
-  if (posthogKey) {
-    const loadPostHog = () => {
-      // @ts-expect-error - PostHog global
-      !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+  if (posthogInitialized) {
+    // Always log initialization in production too for debugging
+    console.log('[Analytics] PostHog initializing with key:', posthogKey.substring(0, 15) + '...')
 
-      window.posthog.init(posthogKey, {
-        api_host: posthogHost,
-        person_profiles: 'identified_only',
-        capture_pageview: true,
-        capture_pageleave: true,
-        autocapture: true,
-        session_recording: {
-          maskAllInputs: true,
-          maskInputOptions: { password: true }
-        }
-      })
-
-      if (isDev) {
-        console.log('[Analytics] PostHog initialized')
+    posthog.init(posthogKey, {
+      api_host: posthogHost,
+      person_profiles: 'identified_only',
+      capture_pageview: true,
+      capture_pageleave: true,
+      autocapture: true,
+      debug: true, // Enable debug mode to see what's happening
+      session_recording: {
+        maskAllInputs: true,
+        maskInputOptions: { password: true }
+      },
+      loaded: (ph) => {
+        console.log('[Analytics] PostHog loaded! distinct_id:', ph.get_distinct_id())
       }
-    }
-
-    loadPostHog()
+    })
+  } else {
+    console.log('[Analytics] PostHog NOT initialized - key:', posthogKey ? 'present' : 'missing', 'window:', typeof window)
   }
 
   // Analytics helper API
@@ -69,16 +69,19 @@ export default defineNuxtPlugin(() => {
         trackEvent(
           name: string,
           props?: Record<string, string | number | boolean>,
-          revenue?: { currency: string; amount: number }
+          revenue?: { currency: string, amount: number }
         ) {
-          // Plausible
+          // Plausible (requires string values for props)
           if (plausibleEnabled) {
-            trackPlausible(name, { props, revenue })
+            const plausibleProps = props
+              ? Object.fromEntries(Object.entries(props).map(([k, v]) => [k, String(v)]))
+              : undefined
+            trackPlausible(name, { props: plausibleProps, revenue })
           }
 
-          // PostHog
-          if (window.posthog) {
-            window.posthog.capture(name, { ...props, ...(revenue ? { revenue_amount: revenue.amount, revenue_currency: revenue.currency } : {}) })
+          // PostHog (library queues events if not fully loaded yet)
+          if (posthogInitialized) {
+            posthog.capture(name, { ...props, ...(revenue ? { revenue_amount: revenue.amount, revenue_currency: revenue.currency } : {}) })
           }
 
           if (isDev) {
@@ -93,8 +96,8 @@ export default defineNuxtPlugin(() => {
           if (plausibleEnabled) {
             trackPlausible('pageview', { url })
           }
-          if (window.posthog) {
-            window.posthog.capture('$pageview', { $current_url: url })
+          if (posthogInitialized) {
+            posthog.capture('$pageview', { $current_url: url })
           }
         },
 
@@ -105,7 +108,7 @@ export default defineNuxtPlugin(() => {
           orderCode: string,
           total: number,
           currency: string,
-          items: Array<{ name: string; quantity: number; price: number }>
+          items: Array<{ name: string, quantity: number, price: number }>
         ) {
           // Plausible with revenue tracking
           if (plausibleEnabled) {
@@ -120,8 +123,8 @@ export default defineNuxtPlugin(() => {
           }
 
           // PostHog
-          if (window.posthog) {
-            window.posthog.capture('purchase_completed', {
+          if (posthogInitialized) {
+            posthog.capture('purchase_completed', {
               order_code: orderCode,
               total,
               currency,
@@ -176,8 +179,8 @@ export default defineNuxtPlugin(() => {
          * Identify a user (PostHog only - Plausible is privacy-focused)
          */
         identify(userId: string, traits?: Record<string, unknown>) {
-          if (window.posthog) {
-            window.posthog.identify(userId, traits)
+          if (posthogInitialized) {
+            posthog.identify(userId, traits)
           }
           if (isDev) {
             console.log('[Analytics] Identify:', userId, traits)
@@ -229,14 +232,3 @@ export default defineNuxtPlugin(() => {
     }
   }
 })
-
-// Type declarations
-declare global {
-  interface Window {
-    posthog: {
-      init: (key: string, config: Record<string, unknown>) => void
-      capture: (event: string, properties?: Record<string, unknown>) => void
-      identify: (userId: string, properties?: Record<string, unknown>) => void
-    }
-  }
-}

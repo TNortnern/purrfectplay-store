@@ -21,7 +21,7 @@ const customerForm = ref({
 })
 
 // Shipping
-const shippingMethods = ref<Array<{ id: string; name: string; priceWithTax: number }>>([])
+const shippingMethods = ref<Array<{ id: string, name: string, priceWithTax: number }>>([])
 const selectedShippingMethod = ref('')
 
 // Redirect if cart is empty
@@ -194,11 +194,19 @@ const formatPrice = (cents: number) => {
     <!-- Header -->
     <header class="bg-white border-b border-stone-200">
       <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-        <NuxtLink to="/" class="flex items-center gap-2 text-stone-800 hover:text-orange-500 transition-colors">
-          <UIcon name="i-lucide-arrow-left" class="w-5 h-5" />
+        <NuxtLink
+          to="/"
+          class="flex items-center gap-2 text-stone-800 hover:text-orange-500 transition-colors"
+        >
+          <UIcon
+            name="i-lucide-arrow-left"
+            class="w-5 h-5"
+          />
           <span class="font-medium">Back to Shop</span>
         </NuxtLink>
-        <h1 class="text-xl font-semibold text-stone-900">Checkout</h1>
+        <h1 class="text-xl font-semibold text-stone-900">
+          Checkout
+        </h1>
         <div class="w-24" />
       </div>
     </header>
@@ -210,33 +218,54 @@ const formatPrice = (cents: number) => {
           <!-- Progress Steps -->
           <div class="flex items-center gap-2 mb-8">
             <div class="flex items-center gap-2">
-              <div :class="[
-                'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors',
-                step >= 1 ? 'bg-orange-500 text-white' : 'bg-stone-200 text-stone-500'
-              ]">
+              <div
+                :class="[
+                  'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors',
+                  step >= 1 ? 'bg-orange-500 text-white' : 'bg-stone-200 text-stone-500'
+                ]"
+              >
                 1
               </div>
-              <span class="text-sm font-medium" :class="step >= 1 ? 'text-stone-900' : 'text-stone-400'">Contact</span>
+              <span
+                class="text-sm font-medium"
+                :class="step >= 1 ? 'text-stone-900' : 'text-stone-400'"
+              >Contact</span>
             </div>
-            <div class="flex-1 h-0.5" :class="step >= 2 ? 'bg-orange-500' : 'bg-stone-200'" />
+            <div
+              class="flex-1 h-0.5"
+              :class="step >= 2 ? 'bg-orange-500' : 'bg-stone-200'"
+            />
             <div class="flex items-center gap-2">
-              <div :class="[
-                'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors',
-                step >= 2 ? 'bg-orange-500 text-white' : 'bg-stone-200 text-stone-500'
-              ]">
+              <div
+                :class="[
+                  'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors',
+                  step >= 2 ? 'bg-orange-500 text-white' : 'bg-stone-200 text-stone-500'
+                ]"
+              >
                 2
               </div>
-              <span class="text-sm font-medium" :class="step >= 2 ? 'text-stone-900' : 'text-stone-400'">Shipping</span>
+              <span
+                class="text-sm font-medium"
+                :class="step >= 2 ? 'text-stone-900' : 'text-stone-400'"
+              >Shipping</span>
             </div>
-            <div class="flex-1 h-0.5" :class="step >= 3 ? 'bg-orange-500' : 'bg-stone-200'" />
+            <div
+              class="flex-1 h-0.5"
+              :class="step >= 3 ? 'bg-orange-500' : 'bg-stone-200'"
+            />
             <div class="flex items-center gap-2">
-              <div :class="[
-                'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors',
-                step >= 3 ? 'bg-orange-500 text-white' : 'bg-stone-200 text-stone-500'
-              ]">
+              <div
+                :class="[
+                  'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors',
+                  step >= 3 ? 'bg-orange-500 text-white' : 'bg-stone-200 text-stone-500'
+                ]"
+              >
                 3
               </div>
-              <span class="text-sm font-medium" :class="step >= 3 ? 'text-stone-900' : 'text-stone-400'">Payment</span>
+              <span
+                class="text-sm font-medium"
+                :class="step >= 3 ? 'text-stone-900' : 'text-stone-400'"
+              >Payment</span>
             </div>
           </div>
 
@@ -252,13 +281,26 @@ const formatPrice = (cents: number) => {
           />
 
           <!-- Step 1: Contact -->
-          <div v-if="step === 1" class="bg-white rounded-xl border border-stone-200 p-6">
-            <h2 class="text-lg font-semibold text-stone-900 mb-4">Contact Information</h2>
-            <p class="text-sm text-stone-500 mb-6">We'll use this to send your order confirmation.</p>
+          <div
+            v-if="step === 1"
+            class="bg-white rounded-xl border border-stone-200 p-6"
+          >
+            <h2 class="text-lg font-semibold text-stone-900 mb-4">
+              Contact Information
+            </h2>
+            <p class="text-sm text-stone-500 mb-6">
+              We'll use this to send your order confirmation.
+            </p>
 
-            <form @submit.prevent="saveCustomer" class="space-y-4">
+            <form
+              class="space-y-4"
+              @submit.prevent="saveCustomer"
+            >
               <div class="grid grid-cols-2 gap-4">
-                <UFormField label="First Name" required>
+                <UFormField
+                  label="First Name"
+                  required
+                >
                   <UInput
                     v-model="customerForm.firstName"
                     placeholder="John"
@@ -266,7 +308,10 @@ const formatPrice = (cents: number) => {
                     :disabled="isProcessing"
                   />
                 </UFormField>
-                <UFormField label="Last Name" required>
+                <UFormField
+                  label="Last Name"
+                  required
+                >
                   <UInput
                     v-model="customerForm.lastName"
                     placeholder="Doe"
@@ -276,7 +321,10 @@ const formatPrice = (cents: number) => {
                 </UFormField>
               </div>
 
-              <UFormField label="Email Address" required>
+              <UFormField
+                label="Email Address"
+                required
+              >
                 <UInput
                   v-model="customerForm.email"
                   type="email"
@@ -294,25 +342,38 @@ const formatPrice = (cents: number) => {
                 :loading="isProcessing"
               >
                 Continue to Shipping
-                <UIcon name="i-lucide-arrow-right" class="w-4 h-4 ml-2" />
+                <UIcon
+                  name="i-lucide-arrow-right"
+                  class="w-4 h-4 ml-2"
+                />
               </UButton>
             </form>
           </div>
 
           <!-- Step 2: Shipping -->
-          <div v-if="step === 2" class="bg-white rounded-xl border border-stone-200 p-6">
-            <h2 class="text-lg font-semibold text-stone-900 mb-4">Shipping Address</h2>
-            <p class="text-sm text-stone-500 mb-6">Where should we send your order?</p>
+          <div
+            v-if="step === 2"
+            class="bg-white rounded-xl border border-stone-200 p-6"
+          >
+            <h2 class="text-lg font-semibold text-stone-900 mb-4">
+              Shipping Address
+            </h2>
+            <p class="text-sm text-stone-500 mb-6">
+              Where should we send your order?
+            </p>
 
-            <div id="address-element" class="min-h-[200px] mb-6" />
+            <div
+              id="address-element"
+              class="min-h-[200px] mb-6"
+            />
 
             <div class="flex gap-4">
               <UButton
                 color="neutral"
                 variant="outline"
                 size="lg"
-                @click="step = 1; destroyAddressElement()"
                 :disabled="isProcessing"
+                @click="step = 1; destroyAddressElement()"
               >
                 Back
               </UButton>
@@ -324,25 +385,38 @@ const formatPrice = (cents: number) => {
                 @click="saveShipping"
               >
                 Continue to Payment
-                <UIcon name="i-lucide-arrow-right" class="w-4 h-4 ml-2" />
+                <UIcon
+                  name="i-lucide-arrow-right"
+                  class="w-4 h-4 ml-2"
+                />
               </UButton>
             </div>
           </div>
 
           <!-- Step 3: Payment -->
-          <div v-if="step === 3" class="bg-white rounded-xl border border-stone-200 p-6">
-            <h2 class="text-lg font-semibold text-stone-900 mb-4">Payment</h2>
-            <p class="text-sm text-stone-500 mb-6">Choose your preferred payment method.</p>
+          <div
+            v-if="step === 3"
+            class="bg-white rounded-xl border border-stone-200 p-6"
+          >
+            <h2 class="text-lg font-semibold text-stone-900 mb-4">
+              Payment
+            </h2>
+            <p class="text-sm text-stone-500 mb-6">
+              Choose your preferred payment method.
+            </p>
 
-            <div id="payment-element" class="min-h-[200px] mb-6" />
+            <div
+              id="payment-element"
+              class="min-h-[200px] mb-6"
+            />
 
             <div class="flex gap-4">
               <UButton
                 color="neutral"
                 variant="outline"
                 size="lg"
-                @click="step = 2; destroyPaymentElement(); nextTick(() => createAddressElement('address-element'))"
                 :disabled="isProcessing"
+                @click="step = 2; destroyPaymentElement(); nextTick(() => createAddressElement('address-element'))"
               >
                 Back
               </UButton>
@@ -353,13 +427,19 @@ const formatPrice = (cents: number) => {
                 :loading="isProcessing || isStripeLoading"
                 @click="processPayment"
               >
-                <UIcon name="i-lucide-lock" class="w-4 h-4 mr-2" />
+                <UIcon
+                  name="i-lucide-lock"
+                  class="w-4 h-4 mr-2"
+                />
                 Pay {{ formatPrice(cartTotal) }}
               </UButton>
             </div>
 
             <p class="text-xs text-stone-400 text-center mt-4 flex items-center justify-center gap-1">
-              <UIcon name="i-lucide-shield-check" class="w-4 h-4" />
+              <UIcon
+                name="i-lucide-shield-check"
+                class="w-4 h-4"
+              />
               Your payment is secure and encrypted by Stripe
             </p>
           </div>
@@ -368,7 +448,9 @@ const formatPrice = (cents: number) => {
         <!-- Order Summary -->
         <div class="md:col-span-2">
           <div class="bg-white rounded-xl border border-stone-200 p-6 sticky top-8">
-            <h3 class="font-semibold text-stone-900 mb-4">Order Summary</h3>
+            <h3 class="font-semibold text-stone-900 mb-4">
+              Order Summary
+            </h3>
 
             <!-- Items -->
             <div class="space-y-4 mb-6">
@@ -385,9 +467,15 @@ const formatPrice = (cents: number) => {
                   >
                 </div>
                 <div class="flex-1 min-w-0">
-                  <h4 class="text-sm font-medium text-stone-900 truncate">{{ item.name }}</h4>
-                  <p class="text-xs text-stone-500">Qty: {{ item.quantity }}</p>
-                  <p class="text-sm font-medium text-stone-900 mt-1">{{ formatPrice(item.lineTotal) }}</p>
+                  <h4 class="text-sm font-medium text-stone-900 truncate">
+                    {{ item.name }}
+                  </h4>
+                  <p class="text-xs text-stone-500">
+                    Qty: {{ item.quantity }}
+                  </p>
+                  <p class="text-sm font-medium text-stone-900 mt-1">
+                    {{ formatPrice(item.lineTotal) }}
+                  </p>
                 </div>
               </div>
             </div>
@@ -417,11 +505,17 @@ const formatPrice = (cents: number) => {
             <div class="mt-6 pt-6 border-t border-stone-100">
               <div class="flex items-center justify-center gap-4 text-xs text-stone-400">
                 <span class="flex items-center gap-1">
-                  <UIcon name="i-lucide-truck" class="w-4 h-4" />
+                  <UIcon
+                    name="i-lucide-truck"
+                    class="w-4 h-4"
+                  />
                   Free Shipping
                 </span>
                 <span class="flex items-center gap-1">
-                  <UIcon name="i-lucide-refresh-cw" class="w-4 h-4" />
+                  <UIcon
+                    name="i-lucide-refresh-cw"
+                    class="w-4 h-4"
+                  />
                   30-Day Returns
                 </span>
               </div>

@@ -40,20 +40,20 @@ useHead({
       innerHTML: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Product',
-        name: 'PurrfectPlay™ Pop-Up Cat Tent & Tunnel Set',
-        description: 'Premium 2-in-1 pop-up cat tent with attached tunnel for safe indoor/outdoor adventures. Features breathable mesh design, instant pop-up setup, and compact portable storage.',
-        brand: { '@type': 'Brand', name: 'PurrfectPlay' },
-        offers: {
+        'name': 'PurrfectPlay™ Pop-Up Cat Tent & Tunnel Set',
+        'description': 'Premium 2-in-1 pop-up cat tent with attached tunnel for safe indoor/outdoor adventures. Features breathable mesh design, instant pop-up setup, and compact portable storage.',
+        'brand': { '@type': 'Brand', 'name': 'PurrfectPlay' },
+        'offers': {
           '@type': 'Offer',
-          price: '49.99',
-          priceCurrency: 'USD',
-          availability: 'https://schema.org/InStock',
-          seller: { '@type': 'Organization', name: 'PurrfectPlay' }
+          'price': '49.99',
+          'priceCurrency': 'USD',
+          'availability': 'https://schema.org/InStock',
+          'seller': { '@type': 'Organization', 'name': 'PurrfectPlay' }
         },
-        aggregateRating: {
+        'aggregateRating': {
           '@type': 'AggregateRating',
-          ratingValue: '4.9',
-          reviewCount: '847'
+          'ratingValue': '4.9',
+          'reviewCount': '847'
         }
       })
     }

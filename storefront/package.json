@@ -17,6 +17,7 @@
     "@plausible-analytics/tracker": "^0.4.4",
     "@stripe/stripe-js": "^8.6.0",
     "nuxt": "^4.2.2",
+    "posthog-js": "^1.310.1",
     "stripe": "^20.1.0"
   },
   "devDependencies": {

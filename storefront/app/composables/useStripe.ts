@@ -125,9 +125,9 @@ export const useStripe = () => {
     cardElement.value = elements.value.create('card', {
       style: {
         base: {
-          fontSize: '16px',
-          color: '#1c1917',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
+          'fontSize': '16px',
+          'color': '#1c1917',
+          'fontFamily': 'system-ui, -apple-system, sans-serif',
           '::placeholder': {
             color: '#a8a29e'
           }
@@ -230,7 +230,7 @@ export const useStripe = () => {
   }
 
   // Create address element for autocomplete
-  const createAddressElement = async (elementId: string, defaultValues?: { firstName?: string; lastName?: string; address?: { line1?: string; line2?: string; city?: string; postal_code?: string; country?: string } }) => {
+  const createAddressElement = async (elementId: string, defaultValues?: { firstName?: string, lastName?: string, address?: { line1?: string, line2?: string, city?: string, postal_code?: string, country?: string } }) => {
     const stripeInstance = await initStripe()
     if (!stripeInstance) return null
 

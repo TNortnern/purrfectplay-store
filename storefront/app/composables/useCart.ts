@@ -110,7 +110,7 @@ export const useCart = () => {
   }
 
   // Add to cart with OPTIMISTIC update
-  const addToCart = async (variantId: string, quantity: number = 1, productInfo?: { name: string; price: number; image?: string }) => {
+  const addToCart = async (variantId: string, quantity: number = 1, productInfo?: { name: string, price: number, image?: string }) => {
     // OPTIMISTIC: Update UI immediately
     if (productInfo) {
       const existingIndex = cartItems.value.findIndex(item => item.variantId === variantId)

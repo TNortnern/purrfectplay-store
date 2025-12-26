@@ -11,17 +11,6 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  routeRules: {
-    '/': { prerender: true }
-  },
-
-  compatibilityDate: '2025-01-15',
-
-  // Development server port
-  devServer: {
-    port: 3015
-  },
-
   // Runtime config for API endpoints
   runtimeConfig: {
     vendureApiUrl: process.env.VENDURE_API_URL || 'http://localhost:3000',
@@ -44,6 +33,17 @@ export default defineNuxtConfig({
       posthogHost: process.env.NUXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com'
     }
   },
+
+  routeRules: {
+    '/': { prerender: true }
+  },
+
+  // Development server port
+  devServer: {
+    port: 3015
+  },
+
+  compatibilityDate: '2025-01-15',
 
   // Nitro server configuration with proxy to Vendure
   nitro: {

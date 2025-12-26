@@ -53,20 +53,24 @@ export default defineEventHandler(async (event) => {
       status: session.status,
       paymentStatus: session.payment_status,
       orderCode: session.metadata?.vendure_order_code || null,
-      customer: session.customer_details ? {
-        email: session.customer_details.email,
-        name: session.customer_details.name
-      } : null,
-      shipping: shippingInfo ? {
-        name: shippingInfo.name,
-        address: {
-          line1: shippingInfo.address?.line1,
-          city: shippingInfo.address?.city,
-          state: shippingInfo.address?.state,
-          postalCode: shippingInfo.address?.postal_code,
-          country: shippingInfo.address?.country
-        }
-      } : null,
+      customer: session.customer_details
+        ? {
+            email: session.customer_details.email,
+            name: session.customer_details.name
+          }
+        : null,
+      shipping: shippingInfo
+        ? {
+            name: shippingInfo.name,
+            address: {
+              line1: shippingInfo.address?.line1,
+              city: shippingInfo.address?.city,
+              state: shippingInfo.address?.state,
+              postalCode: shippingInfo.address?.postal_code,
+              country: shippingInfo.address?.country
+            }
+          }
+        : null,
       lineItems: session.line_items?.data.map(item => ({
         name: item.description,
         quantity: item.quantity,

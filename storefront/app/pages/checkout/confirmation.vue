@@ -13,17 +13,29 @@ const orderCode = computed(() => route.query.order as string || '')
       <div class="bg-white rounded-2xl border border-stone-200 p-8 text-center">
         <!-- Success Icon -->
         <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <UIcon name="i-lucide-check" class="w-8 h-8 text-green-600" />
+          <UIcon
+            name="i-lucide-check"
+            class="w-8 h-8 text-green-600"
+          />
         </div>
 
-        <h1 class="text-2xl font-bold text-stone-900 mb-2">Order Confirmed!</h1>
+        <h1 class="text-2xl font-bold text-stone-900 mb-2">
+          Order Confirmed!
+        </h1>
         <p class="text-stone-500 mb-6">
           Thank you for your purchase. Your order has been received and is being processed.
         </p>
 
-        <div v-if="orderCode" class="bg-stone-50 rounded-lg p-4 mb-6">
-          <p class="text-sm text-stone-500 mb-1">Order Number</p>
-          <p class="font-mono text-lg font-semibold text-stone-900">{{ orderCode }}</p>
+        <div
+          v-if="orderCode"
+          class="bg-stone-50 rounded-lg p-4 mb-6"
+        >
+          <p class="text-sm text-stone-500 mb-1">
+            Order Number
+          </p>
+          <p class="font-mono text-lg font-semibold text-stone-900">
+            {{ orderCode }}
+          </p>
         </div>
 
         <p class="text-sm text-stone-500 mb-6">
@@ -31,9 +43,16 @@ const orderCode = computed(() => route.query.order as string || '')
         </p>
 
         <NuxtLink to="/">
-          <UButton color="primary" size="lg" block>
+          <UButton
+            color="primary"
+            size="lg"
+            block
+          >
             Continue Shopping
-            <UIcon name="i-lucide-arrow-right" class="w-4 h-4 ml-2" />
+            <UIcon
+              name="i-lucide-arrow-right"
+              class="w-4 h-4 ml-2"
+            />
           </UButton>
         </NuxtLink>
 
