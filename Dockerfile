@@ -59,9 +59,13 @@ COPY --from=storefront-builder /app/storefront/package.json ./storefront/
 # MODE=unified or unset → run both (Vendure on 3000, Nuxt on PORT)
 RUN echo '#!/bin/sh' > /app/start.sh && \
     echo 'set -e' >> /app/start.sh && \
+    echo 'echo "=== START.SH DEBUG ===" ' >> /app/start.sh && \
+    echo 'echo "MODE env var: [$MODE]"' >> /app/start.sh && \
+    echo 'echo "PORT env var: [$PORT]"' >> /app/start.sh && \
+    echo 'echo "====================="' >> /app/start.sh && \
     echo 'if [ "$MODE" = "vendure" ]; then' >> /app/start.sh && \
     echo '  echo "MODE=vendure: Starting Vendure API on port ${PORT:-3000}..."' >> /app/start.sh && \
-    echo '  cd /app/vendure && node dist/index.js' >> /app/start.sh && \
+    echo '  cd /app/vendure && PORT=${PORT:-3000} node dist/index.js' >> /app/start.sh && \
     echo 'elif [ "$MODE" = "storefront" ]; then' >> /app/start.sh && \
     echo '  echo "MODE=storefront: Starting Nuxt on port ${PORT:-3000}..."' >> /app/start.sh && \
     echo '  cd /app/storefront && NITRO_PORT=${PORT:-3000} NUXT_HOST=0.0.0.0 node .output/server/index.mjs' >> /app/start.sh && \
