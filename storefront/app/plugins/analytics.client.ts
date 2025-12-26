@@ -1,4 +1,4 @@
-import Plausible from '@plausible-analytics/tracker'
+import { init as initPlausible, track as trackPlausible } from '@plausible-analytics/tracker'
 
 export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig()
@@ -6,29 +6,27 @@ export default defineNuxtPlugin(() => {
 
   // Plausible Analytics (self-hosted, proxied through our domain)
   const plausibleDomain = config.public.plausibleDomain as string
-
-  let plausible: ReturnType<typeof Plausible> | null = null
+  let plausibleEnabled = false
 
   if (plausibleDomain) {
     // Initialize Plausible with proxied endpoints to bypass adblockers
-    const baseHost = config.public.plausibleHost as string || ''
-
-    plausible = Plausible({
+    initPlausible({
       domain: plausibleDomain,
-      // Use our proxy endpoints - these look like first-party requests
-      apiHost: baseHost || window.location.origin,
-      // Custom tracking endpoint (our Nitro proxy)
-      trackLocalhost: isDev,
+      // Use our proxy endpoint - looks like first-party request
+      endpoint: '/api/event',
+      // Track localhost in dev mode
+      captureOnLocalhost: isDev,
+      // Auto-capture pageviews
+      autoCapturePageviews: true,
+      // Enable outbound link and file download tracking
+      outboundLinks: true,
+      fileDownloads: true
     })
 
-    // Override the default script behavior to use our proxy
-    // The tracker will send events to /api/event by default, we proxy to /api/p/event
-    plausible.enableAutoPageviews()
-    plausible.enableAutoOutboundTracking()
+    plausibleEnabled = true
 
     if (isDev) {
       console.log('[Analytics] Plausible initialized for:', plausibleDomain)
-      console.log('[Analytics] Using proxy endpoints via:', baseHost || 'relative paths')
     }
   }
 
@@ -74,11 +72,8 @@ export default defineNuxtPlugin(() => {
           revenue?: { currency: string; amount: number }
         ) {
           // Plausible
-          if (plausible) {
-            const options: { props?: Record<string, string | number | boolean>; revenue?: { currency: string; amount: number } } = {}
-            if (props) options.props = props
-            if (revenue) options.revenue = revenue
-            plausible.trackEvent(name, options)
+          if (plausibleEnabled) {
+            trackPlausible(name, { props, revenue })
           }
 
           // PostHog
@@ -92,11 +87,11 @@ export default defineNuxtPlugin(() => {
         },
 
         /**
-         * Track a page view (automatic with enableAutoPageviews, but can be called manually for SPAs)
+         * Track a page view (automatic with autoCapturePageviews, but can be called manually for SPAs)
          */
         trackPageView(url?: string) {
-          if (plausible) {
-            plausible.trackPageview({ url })
+          if (plausibleEnabled) {
+            trackPlausible('pageview', { url })
           }
           if (window.posthog) {
             window.posthog.capture('$pageview', { $current_url: url })
@@ -113,11 +108,11 @@ export default defineNuxtPlugin(() => {
           items: Array<{ name: string; quantity: number; price: number }>
         ) {
           // Plausible with revenue tracking
-          if (plausible) {
-            plausible.trackEvent('Purchase', {
+          if (plausibleEnabled) {
+            trackPlausible('Purchase', {
               props: {
                 order_code: orderCode,
-                item_count: items.length,
+                item_count: String(items.length),
                 items: items.map(i => i.name).join(', ')
               },
               revenue: { currency, amount: total }
@@ -222,24 +217,6 @@ export default defineNuxtPlugin(() => {
          */
         trackFormSubmit(formName: string, success: boolean = true) {
           this.trackEvent('Form Submit', { form_name: formName, success })
-        },
-
-        /**
-         * Track video engagement
-         */
-        trackVideo(action: 'play' | 'pause' | 'complete', videoTitle: string, percentWatched?: number) {
-          this.trackEvent('Video', {
-            action,
-            video_title: videoTitle,
-            ...(percentWatched !== undefined ? { percent_watched: percentWatched } : {})
-          })
-        },
-
-        /**
-         * Track scroll depth
-         */
-        trackScrollDepth(depth: 25 | 50 | 75 | 100) {
-          this.trackEvent('Scroll Depth', { depth })
         },
 
         /**
