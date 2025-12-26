@@ -53,27 +53,32 @@ RUN cd /app/vendure && npm ci --only=production
 COPY --from=storefront-builder /app/storefront/.output ./storefront/.output
 COPY --from=storefront-builder /app/storefront/package.json ./storefront/
 
-# Create startup script that runs both services
-# Vendure runs in background on port 3000 (internal only)
-# Nuxt runs in foreground on PORT (default 6000) and proxies to Vendure
+# Create startup script with MODE support
+# MODE=vendure  → only run Vendure API on PORT
+# MODE=storefront → only run Nuxt on PORT
+# MODE=unified or unset → run both (Vendure on 3000, Nuxt on PORT)
 RUN echo '#!/bin/sh' > /app/start.sh && \
     echo 'set -e' >> /app/start.sh && \
-    echo 'echo "Starting Vendure on internal port 3000..."' >> /app/start.sh && \
-    echo 'cd /app/vendure && PORT=3000 node dist/index.js &' >> /app/start.sh && \
-    echo 'VENDURE_PID=$!' >> /app/start.sh && \
-    echo 'sleep 5' >> /app/start.sh && \
-    echo 'echo "Starting Nuxt on port ${PORT:-6000}..."' >> /app/start.sh && \
-    echo 'cd /app/storefront && NITRO_PORT=${PORT:-6000} NUXT_HOST=0.0.0.0 node .output/server/index.mjs' >> /app/start.sh && \
+    echo 'if [ "$MODE" = "vendure" ]; then' >> /app/start.sh && \
+    echo '  echo "MODE=vendure: Starting Vendure API on port ${PORT:-3000}..."' >> /app/start.sh && \
+    echo '  cd /app/vendure && node dist/index.js' >> /app/start.sh && \
+    echo 'elif [ "$MODE" = "storefront" ]; then' >> /app/start.sh && \
+    echo '  echo "MODE=storefront: Starting Nuxt on port ${PORT:-3000}..."' >> /app/start.sh && \
+    echo '  cd /app/storefront && NITRO_PORT=${PORT:-3000} NUXT_HOST=0.0.0.0 node .output/server/index.mjs' >> /app/start.sh && \
+    echo 'else' >> /app/start.sh && \
+    echo '  echo "MODE=unified: Starting both services..."' >> /app/start.sh && \
+    echo '  echo "Starting Vendure on internal port 3000..."' >> /app/start.sh && \
+    echo '  cd /app/vendure && PORT=3000 node dist/index.js &' >> /app/start.sh && \
+    echo '  sleep 5' >> /app/start.sh && \
+    echo '  echo "Starting Nuxt on port ${PORT:-6000}..."' >> /app/start.sh && \
+    echo '  cd /app/storefront && NITRO_PORT=${PORT:-6000} NUXT_HOST=0.0.0.0 node .output/server/index.mjs' >> /app/start.sh && \
+    echo 'fi' >> /app/start.sh && \
     chmod +x /app/start.sh
 
 # Environment variables
 ENV NODE_ENV=production
-ENV PORT=6000
 
-# Health check via Nuxt API endpoint
-HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-6000}/api/health || exit 1
-
-EXPOSE 6000
+# Expose common ports
+EXPOSE 3000 6000
 
 CMD ["/app/start.sh"]
