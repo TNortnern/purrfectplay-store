@@ -67,11 +67,13 @@ RUN echo '#!/bin/sh' > /app/start.sh && \
     echo '  cd /app/storefront && NITRO_PORT=${PORT:-3000} NUXT_HOST=0.0.0.0 node .output/server/index.mjs' >> /app/start.sh && \
     echo 'else' >> /app/start.sh && \
     echo '  echo "MODE=unified: Starting both services..."' >> /app/start.sh && \
-    echo '  echo "Starting Vendure on internal port 3000..."' >> /app/start.sh && \
-    echo '  cd /app/vendure && PORT=3000 node dist/index.js &' >> /app/start.sh && \
-    echo '  sleep 5' >> /app/start.sh && \
-    echo '  echo "Starting Nuxt on port ${PORT:-6000}..."' >> /app/start.sh && \
-    echo '  cd /app/storefront && NITRO_PORT=${PORT:-6000} NUXT_HOST=0.0.0.0 node .output/server/index.mjs' >> /app/start.sh && \
+    echo '  VENDURE_PORT=4000' >> /app/start.sh && \
+    echo '  echo "Starting Vendure on internal port $VENDURE_PORT..."' >> /app/start.sh && \
+    echo '  cd /app/vendure && PORT=$VENDURE_PORT node dist/index.js &' >> /app/start.sh && \
+    echo '  sleep 8' >> /app/start.sh && \
+    echo '  echo "Starting Nuxt on port ${PORT:-3000}..."' >> /app/start.sh && \
+    echo '  export VENDURE_API_URL=http://localhost:$VENDURE_PORT' >> /app/start.sh && \
+    echo '  cd /app/storefront && NITRO_PORT=${PORT:-3000} NUXT_HOST=0.0.0.0 node .output/server/index.mjs' >> /app/start.sh && \
     echo 'fi' >> /app/start.sh && \
     chmod +x /app/start.sh
 
