@@ -18,7 +18,8 @@
     "@stripe/stripe-js": "^8.6.0",
     "nuxt": "^4.2.2",
     "posthog-js": "^1.310.1",
-    "stripe": "^20.1.0"
+    "stripe": "^20.1.0",
+    "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.12.1",
