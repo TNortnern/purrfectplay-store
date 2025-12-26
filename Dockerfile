@@ -55,30 +55,26 @@ COPY --from=storefront-builder /app/storefront/package.json ./storefront/
 
 # Create startup script - unified mode (runs both Vendure and Nuxt)
 RUN echo '#!/bin/sh' > /app/start.sh && \
-    echo 'echo "=== UNIFIED MODE STARTUP ===" ' >> /app/start.sh && \
-    echo 'echo "PORT: ${PORT:-3000}"' >> /app/start.sh && \
-    echo 'echo "DATABASE_URL set: $([ -n "$DATABASE_URL" ] && echo YES || echo NO)"' >> /app/start.sh && \
-    echo 'echo "DATABASE_SSL: $DATABASE_SSL"' >> /app/start.sh && \
-    echo 'echo "SUPERADMIN_USERNAME: $SUPERADMIN_USERNAME"' >> /app/start.sh && \
-    echo 'echo "Checking Vendure files..."' >> /app/start.sh && \
-    echo 'ls -la /app/vendure/dist/ | head -5' >> /app/start.sh && \
-    echo 'echo "Starting Vendure on internal port 4000..."' >> /app/start.sh && \
-    echo 'cd /app/vendure && PORT=4000 node dist/index.js > /tmp/vendure.log 2>&1 &' >> /app/start.sh && \
+    echo 'echo "=== UNIFIED MODE STARTUP ===" > /tmp/vendure.log' >> /app/start.sh && \
+    echo 'date >> /tmp/vendure.log' >> /app/start.sh && \
+    echo 'echo "PORT: ${PORT:-3000}" >> /tmp/vendure.log' >> /app/start.sh && \
+    echo 'echo "DATABASE_URL set: $([ -n "$DATABASE_URL" ] && echo YES || echo NO)" >> /tmp/vendure.log' >> /app/start.sh && \
+    echo 'echo "DATABASE_SSL: $DATABASE_SSL" >> /tmp/vendure.log' >> /app/start.sh && \
+    echo 'echo "SUPERADMIN_USERNAME: $SUPERADMIN_USERNAME" >> /tmp/vendure.log' >> /app/start.sh && \
+    echo 'echo "Checking Vendure files..." >> /tmp/vendure.log' >> /app/start.sh && \
+    echo 'ls -la /app/vendure/dist/ >> /tmp/vendure.log 2>&1' >> /app/start.sh && \
+    echo 'echo "Starting Vendure on internal port 4000..." >> /tmp/vendure.log' >> /app/start.sh && \
+    echo 'cd /app/vendure && PORT=4000 node dist/index.js >> /tmp/vendure.log 2>&1 &' >> /app/start.sh && \
     echo 'VENDURE_PID=$!' >> /app/start.sh && \
-    echo 'echo "Vendure PID: $VENDURE_PID"' >> /app/start.sh && \
-    echo 'echo "Waiting 15 seconds for Vendure to initialize..."' >> /app/start.sh && \
+    echo 'echo "Vendure PID: $VENDURE_PID" >> /tmp/vendure.log' >> /app/start.sh && \
+    echo 'echo "Waiting 15 seconds for Vendure to initialize..." >> /tmp/vendure.log' >> /app/start.sh && \
     echo 'sleep 15' >> /app/start.sh && \
-    echo 'echo "=== Vendure startup log ===" ' >> /app/start.sh && \
-    echo 'cat /tmp/vendure.log || echo "No log file"' >> /app/start.sh && \
-    echo 'echo "===========================" ' >> /app/start.sh && \
     echo 'if kill -0 $VENDURE_PID 2>/dev/null; then' >> /app/start.sh && \
-    echo '  echo "Vendure is running (PID $VENDURE_PID)"' >> /app/start.sh && \
+    echo '  echo "Vendure is running (PID $VENDURE_PID)" >> /tmp/vendure.log' >> /app/start.sh && \
     echo 'else' >> /app/start.sh && \
-    echo '  echo "ERROR: Vendure process died!"' >> /app/start.sh && \
-    echo '  wait $VENDURE_PID 2>/dev/null' >> /app/start.sh && \
-    echo '  echo "Exit code: $?"' >> /app/start.sh && \
+    echo '  echo "ERROR: Vendure process died!" >> /tmp/vendure.log' >> /app/start.sh && \
     echo 'fi' >> /app/start.sh && \
-    echo 'echo "Starting Nuxt on port ${PORT:-3000}..."' >> /app/start.sh && \
+    echo 'echo "Starting Nuxt on port ${PORT:-3000}..." >> /tmp/vendure.log' >> /app/start.sh && \
     echo 'cd /app/storefront && NITRO_PORT=${PORT:-3000} NUXT_HOST=0.0.0.0 node .output/server/index.mjs' >> /app/start.sh && \
     chmod +x /app/start.sh
 
