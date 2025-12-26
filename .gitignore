@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+.output/
+.nuxt/
+dist/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Database (dev only)
+*.sqlite
+
+# Generated types
+storefront/.nuxt/
+
+# Vendure assets (uploaded files)
+vendure/static/assets/
+
+# Test output
+.playwright-mcp/

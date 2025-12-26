@@ -1,0 +1,26 @@
+{
+  "name": "catiohaven",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Premium outdoor cat enclosure - one-page product storefront",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:vendure\" \"npm run dev:storefront\"",
+    "dev:vendure": "cd vendure && npm run dev:server",
+    "dev:storefront": "cd storefront && pnpm dev",
+    "build": "npm run build:vendure && npm run build:storefront",
+    "build:vendure": "cd vendure && npm run build && npm run build:dashboard",
+    "build:storefront": "cd storefront && pnpm build",
+    "start": "concurrently \"npm run start:vendure\" \"npm run start:storefront\"",
+    "start:vendure": "cd vendure && npm run start:server",
+    "start:storefront": "cd storefront && node .output/server/index.mjs",
+    "docker:build": "docker build -t catiohaven .",
+    "docker:run": "docker run -p 6000:6000 catiohaven",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "lint": "cd storefront && pnpm lint",
+    "typecheck": "cd storefront && pnpm typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}
