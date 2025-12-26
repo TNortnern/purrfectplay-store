@@ -24,7 +24,7 @@ services:
   db:
     image: postgres:16-alpine
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -72,13 +72,13 @@ services:
     image: ghcr.io/plausible/community-edition:v3.1.0
     command: sh -c "sleep 10 && /entrypoint.sh db createdb && /entrypoint.sh db migrate && /entrypoint.sh run"
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
-      - BASE_URL=${PLAUSIBLE_BASE_URL:-http://localhost:8000}
-      - SECRET_KEY_BASE=${PLAUSIBLE_SECRET_KEY:-please-change-me-to-a-64-byte-random-string-for-production}
+      - BASE_URL=${PLAUSIBLE_BASE_URL:-http://localhost:8001}
+      - SECRET_KEY_BASE=${PLAUSIBLE_SECRET_KEY:-UR/InSYTCVDBx0EJviiBotHha3C9W6mImgGRDNnPqSTbJslFk8IFIDlXa8BMLTlj8FUhBNt5rywr5awohS/Hdw==}
       - DATABASE_URL=postgres://postgres:postgres@db:5432/plausible
       - CLICKHOUSE_DATABASE_URL=http://plausible_events_db:8123/plausible_events_db
-      - DISABLE_REGISTRATION=invite_only
+      - DISABLE_REGISTRATION=false
       - LOG_LEVEL=warn
     depends_on:
       - db
@@ -91,6 +91,7 @@ services:
       - plausible_events_data:/var/lib/clickhouse
       - ./plausible/clickhouse-config.xml:/etc/clickhouse-server/config.d/logging.xml:ro
       - ./plausible/clickhouse-user-config.xml:/etc/clickhouse-server/users.d/logging.xml:ro
+      - ./plausible/clickhouse-users.xml:/etc/clickhouse-server/users.d/users.xml:ro
     ulimits:
       nofile:
         soft: 262144
