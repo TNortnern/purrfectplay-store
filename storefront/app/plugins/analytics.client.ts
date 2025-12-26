@@ -4,16 +4,19 @@ export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig()
   const isDev = import.meta.dev
 
-  // Plausible Analytics (self-hosted, proxied through our domain)
+  // Plausible Analytics
   const plausibleDomain = config.public.plausibleDomain as string
+  const plausibleHost = config.public.plausibleHost as string
   let plausibleEnabled = false
 
   if (plausibleDomain) {
-    // Initialize Plausible with proxied endpoints to bypass adblockers
+    // If plausibleHost is set, use our proxy (self-hosted). Otherwise use Plausible Cloud directly.
+    const useSelfHosted = !!plausibleHost || isDev
+
     initPlausible({
       domain: plausibleDomain,
-      // Use our proxy endpoint - looks like first-party request
-      endpoint: '/api/event',
+      // Use proxy for self-hosted, or Plausible Cloud's API directly
+      endpoint: useSelfHosted ? '/api/event' : 'https://plausible.io/api/event',
       // Track localhost in dev mode
       captureOnLocalhost: isDev,
       // Auto-capture pageviews
